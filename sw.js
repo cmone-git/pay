@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cmpay-cache-v1';
+const CACHE_NAME = 'cmpay-cache-v6';
 
 // All paths are relative to work perfectly inside your subfolder
 const urlsToCache = [
