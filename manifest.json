@@ -1,24 +1,22 @@
 {
-  "name": "CMFilings | Payments",
+  "name": "CMFilings | Admin",
   "short_name": "CMFilings",
-  "description": "Make secure payments for CMFilings services.",
+  "description": "Admin dashboard for managing payment confirmations.",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#f9fafb",
-  "theme_color": "#dc2626",
+  "background_color": "#f4f5f9",
+  "theme_color": "#f4f5f9",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "logo.png",
+      "src": "assets/logo.png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
-      "src": "logo.png",
+      "src": "assets/logo.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     }
   ]
 }
