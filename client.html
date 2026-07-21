@@ -2,192 +2,20 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Payments</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f4f5f9; }
-    </style>
-</head>
-<body class="text-gray-800 relative">
-
-    <div id="loginOverlay" class="fixed inset-0 bg-gray-900/90 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white p-8 rounded-xl shadow-2xl max-w-sm w-full text-center">
-            <h2 class="text-2xl font-bold text-gray-900 mb-2"><span class="text-[#C80000]">CM</span>Filings Admin</h2>
-            <p class="text-sm text-gray-500 mb-6">Enter admin passcode to view data</p>
-            
-            <input type="password" id="adminPasscode" placeholder="Enter Passcode" class="w-full border border-gray-300 rounded-lg px-4 py-3 mb-4 outline-none focus:border-[#0057FF] focus:ring-1 focus:ring-[#0057FF] transition">
-            
-            <button onclick="loginAndFetch()" class="w-full bg-[#0057FF] hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition shadow-md">
-                Access Dashboard
-            </button>
-            <p id="loginError" class="text-red-500 text-xs font-semibold mt-3 hidden">Incorrect passcode.</p>
-        </div>
-    </div>
-
-    <header class="bg-white border-b border-gray-200 px-8 py-4 flex justify-between items-center">
-        <div class="flex items-center gap-2">
-            <span class="font-bold text-xl tracking-tight text-gray-900">
-                <span class="text-[#C80000]">CM</span>Filings Admin
-            </span>
-        </div>
-        <button onclick="logout()" class="text-sm font-semibold text-gray-500 hover:text-red-600 bg-gray-100 hover:bg-red-50 px-3 py-1.5 rounded-full flex items-center gap-2 transition">
-            <i data-lucide="log-out" class="w-4 h-4"></i> Lock Dashboard
-        </button>
-    </header>
-
-    <main class="p-8 max-w-7xl mx-auto">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-bold text-gray-900">Payment Confirmations</h1>
-            <button onclick="fetchData()" class="bg-[#0057FF] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 flex gap-2 items-center transition shadow-sm">
-                <i data-lucide="refresh-cw" class="w-4 h-4" id="refreshIcon"></i> Refresh Data
-            </button>
-        </div>
-
-        <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-gray-50 border-b border-gray-200 text-xs uppercase tracking-wider text-gray-500 font-semibold">
-                            <th class="p-4">Timestamp</th>
-                            <th class="p-4">Client Name</th>
-                            <th class="p-4">Mobile</th>
-                            <th class="p-4">Amount (₹)</th>
-                            <th class="p-4">Req ID</th>
-                            <th class="p-4">Status</th>
-                            <th class="p-4 text-center">Receipt</th>
-                        </tr>
-                    </thead>
-                    <tbody id="dataTable" class="divide-y divide-gray-100 text-sm">
-                        <tr>
-                            <td colspan="7" class="p-8 text-center text-gray-400">Please log in to load data.</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </main>
-
-    <script>
-        lucide.createIcons();
-        
-        // ⚠️ YOUR EXACT APPS SCRIPT URL
-        const BASE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzpWLdak951IK2OX9ebfPQ9gvT-9pmpyc3VEWbi3hvyiUCDSg8R1y5AB9uzNlcVdCYHdg/exec";
-        
-        let currentPasscode = "";
-
-        // Trigger login on Enter key
-        document.getElementById("adminPasscode").addEventListener("keypress", function(event) {
-            if (event.key === "Enter") { loginAndFetch(); }
-        });
-
-        async function loginAndFetch() {
-            const inputPasscode = document.getElementById('adminPasscode').value;
-            if(!inputPasscode) return;
-            
-            currentPasscode = inputPasscode;
-            document.getElementById('loginError').classList.add('hidden');
-            await fetchData();
-        }
-
-        function logout() {
-            currentPasscode = "";
-            document.getElementById('adminPasscode').value = "";
-            document.getElementById('dataTable').innerHTML = '<tr><td colspan="7" class="p-8 text-center text-gray-400">Please log in to load data.</td></tr>';
-            document.getElementById('loginOverlay').classList.remove('hidden');
-        }
-
-        async function fetchData() {
-            if(!currentPasscode) return;
-
-            const tableBody = document.getElementById('dataTable');
-            const icon = document.getElementById('refreshIcon');
-            
-            icon.classList.add('animate-spin');
-            tableBody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-gray-500">Verifying and loading data...</td></tr>';
-            
-            try {
-                // Append the passcode to the URL securely via query parameter
-                const fetchUrl = `${BASE_SCRIPT_URL}?passcode=${encodeURIComponent(currentPasscode)}`;
-                const response = await fetch(fetchUrl);
-                const data = await response.json();
-                
-                // Check if the Apps Script rejected the passcode
-                if (data.status === "error") {
-                    document.getElementById('loginError').classList.remove('hidden');
-                    tableBody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-gray-400">Please log in to load data.</td></tr>';
-                    return;
-                }
-
-                // If successful, hide the overlay and show data
-                document.getElementById('loginOverlay').classList.add('hidden');
-                tableBody.innerHTML = ''; 
-                
-                if (data.length === 0) {
-                    tableBody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-gray-500">No payment records found.</td></tr>';
-                    return;
-                }
-
-                data.reverse().forEach(row => {
-                    const statusColor = row[5] === 'Pending' ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700';
-                    const tr = document.createElement('tr');
-                    tr.className = "hover:bg-gray-50 transition";
-                    tr.innerHTML = `
-                        <td class="p-4 font-medium text-gray-600">${row[0]}</td>
-                        <td class="p-4 font-bold text-gray-900 uppercase">${row[1]}</td>
-                        <td class="p-4 text-gray-600">${row[2]}</td>
-                        <td class="p-4 font-bold text-[#0057FF]">₹${row[3]}</td>
-                        <td class="p-4 font-mono text-xs text-gray-500">${row[6] || 'N/A'}</td>
-                        <td class="p-4">
-                            <span class="px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${statusColor}">${row[5]}</span>
-                        </td>
-                        <td class="p-4 text-center">
-                            ${row[7] !== 'No Receipt Uploaded' 
-                                ? `<a href="${row[7]}" target="_blank" class="inline-flex p-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg transition"><i data-lucide="external-link" class="w-4 h-4"></i></a>` 
-                                : `<span class="text-xs text-gray-400">None</span>`}
-                        </td>
-                    `;
-                    tableBody.appendChild(tr);
-                });
-
-            } catch (error) {
-                console.error("Error fetching data:", error);
-                tableBody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-red-500">Failed to load data.</td></tr>';
-            } finally {
-                icon.classList.remove('animate-spin');
-                lucide.createIcons();
-            }
-        }
-    </script>
-</body>
-</html>
-
-
-
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Payment | CMFilings</title>
     
-    <!-- Unified Logo Assets -->
     <link rel="icon" type="image/png" href="/assets/logo.png">
     <link rel="apple-touch-icon" href="/assets/logo.png">
     <link rel="apple-touch-startup-image" href="/assets/logo.png">
     <meta property="og:image" content="/assets/logo.png">
 
-    <!-- PWA Manifest -->
     <link rel="manifest" href="/app/manifest.json">
     <meta name="theme-color" content="#0057FF">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="CMPay">
     
-    <!-- Fonts, Tailwind, Lucide, QRCode JS -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -195,7 +23,6 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
-    <!-- Tailwind Configuration & Custom Styles -->
     <script>
         tailwind.config = {
             theme: {
@@ -240,11 +67,16 @@
         .mobile-prefix-input {
             padding-left: 3.25rem !important;
         }
+        
+        /* Small animation class definition */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body class="text-gray-800 min-h-screen flex flex-col sm:justify-center relative">
 
-    <!-- App Splash Screen -->
     <div id="splash-screen" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-theme-bg transition-opacity duration-500">
         <img src="/assets/logo.png" alt="Loading" class="w-20 h-20 object-contain rounded-2xl shadow-sm animate-pulse mb-4">
         <div class="h-1 w-24 bg-gray-200 rounded-full overflow-hidden">
@@ -252,35 +84,36 @@
         </div>
     </div>
 
-    <!-- Top Left Branding -->
-    <div class="absolute top-0 left-0 p-6 hidden sm:flex items-center gap-2 cursor-pointer" onclick="window.location.href='/'">
-        <img src="/assets/logo.png" alt="CMFilings Logo" class="h-8 w-8 object-cover">
-        <span class="font-bold text-xl tracking-tight">
-            <span class="text-theme-cmRed">CM</span><span class="text-theme-cmDark">Filings</span>
-        </span>
+    <div class="absolute top-0 left-0 p-6 hidden sm:flex items-start gap-3 cursor-pointer" onclick="window.location.href='/'">
+        <img src="/assets/logo.png" alt="CMFilings Logo" class="h-10 w-10 object-cover">
+        <div class="flex flex-col">
+            <span class="font-bold text-xl tracking-tight leading-none mt-1">
+                <span class="text-theme-cmRed">CM</span><span class="text-theme-cmDark">Filings</span>
+            </span>
+            <span class="text-[10px] text-gray-500 font-bold tracking-wider uppercase mt-1.5">Tax Experts & Business Innovators</span>
+        </div>
     </div>
 
-    <!-- Mobile Header -->
-    <div class="sm:hidden p-5 flex items-center justify-center cursor-pointer" onclick="window.location.href='/'">
-        <img src="/assets/logo.png" alt="CMFilings Logo" class="h-8 w-8 object-cover mr-2">
-        <span class="font-bold text-xl tracking-tight">
-            <span class="text-theme-cmRed">CM</span><span class="text-theme-cmDark">Filings</span>
-        </span>
+    <div class="sm:hidden p-5 flex flex-col items-center justify-center cursor-pointer text-center" onclick="window.location.href='/'">
+        <div class="flex items-center gap-2">
+            <img src="/assets/logo.png" alt="CMFilings Logo" class="h-8 w-8 object-cover">
+            <span class="font-bold text-xl tracking-tight">
+                <span class="text-theme-cmRed">CM</span><span class="text-theme-cmDark">Filings</span>
+            </span>
+        </div>
+        <span class="text-[10px] text-gray-500 font-bold tracking-wider uppercase mt-1.5">Tax Experts & Business Innovators</span>
     </div>
 
-    <!-- Main Payment Card -->
-    <div class="w-full max-w-[440px] mx-auto bg-white sm:rounded-2xl sm:shadow-[0_4px_20px_rgb(0,0,0,0.05)] sm:border border-gray-200 overflow-hidden relative z-10 px-8 py-10">
+    <div class="w-full max-w-[440px] mx-auto bg-white sm:rounded-2xl sm:shadow-[0_4px_20px_rgb(0,0,0,0.05)] sm:border border-gray-200 overflow-hidden relative z-10 px-8 py-8 sm:py-10">
         
         <div class="text-center mb-8">
             <h1 class="text-3xl font-bold text-theme-cmDark tracking-tight mb-2">Secure Payment</h1>
             <p class="text-sm text-gray-500">Enter your details to proceed with CMPay.</p>
         </div>
 
-        <!-- Form Content -->
         <div class="space-y-5">
             <div>
                 <label class="block text-[13px] text-gray-600 mb-1.5">Full Name</label>
-                <!-- Added 'uppercase' class -->
                 <input type="text" id="payerName" placeholder="JOHN DOE" class="hst-input uppercase">
             </div>
 
@@ -299,7 +132,6 @@
 
             <div>
                 <label class="block text-[13px] text-gray-600 mb-1.5">Description / Reference</label>
-                <!-- Added 'uppercase' class -->
                 <textarea id="payDesc" rows="2" placeholder="SERVICE PAYMENT" class="hst-input resize-none uppercase"></textarea>
             </div>
 
@@ -307,13 +139,20 @@
                 Proceed to Pay
             </button>
             
-            <div class="text-center mt-6">
-                <a href="tel:9946151111" class="text-sm font-semibold text-theme-primary hover:text-theme-cmDark transition">Need help with payment? Contact Support</a>
+            <div class="mt-6 border-t border-gray-100 pt-5">
+                <p class="text-[11px] text-center text-gray-400 mb-3 uppercase tracking-wider font-semibold">Need help with payment?</p>
+                <div class="flex items-center justify-center gap-3">
+                    <a href="tel:+919946151111" class="flex-1 flex items-center justify-center gap-2 text-sm font-semibold text-gray-600 hover:text-theme-primary transition bg-gray-50 py-2.5 rounded-lg border border-gray-200">
+                        <i data-lucide="phone" class="w-4 h-4"></i> Call Us
+                    </a>
+                    <a href="https://wa.me/919946151111?text=Hi,%20I%20need%20help%20with%20my%20payment%20on%20CMFilings." target="_blank" class="flex-1 flex items-center justify-center gap-2 text-sm font-semibold text-green-600 hover:text-green-700 transition bg-green-50 py-2.5 rounded-lg border border-green-200">
+                        <i data-lucide="message-circle" class="w-4 h-4"></i> WhatsApp
+                    </a>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal Popup -->
     <div id="paymentModal" class="fixed inset-0 z-50 hidden">
         <div class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity" onclick="closeModal()"></div>
         <div class="fixed inset-0 flex items-center justify-center p-4">
@@ -329,7 +168,6 @@
                 <div class="overflow-y-auto no-scrollbar p-6 bg-theme-bg/30">
                     
                     <div class="flex flex-col items-center">
-                        <!-- Request ID Badge -->
                         <div class="mb-4 bg-gray-100/80 px-3 py-1.5 rounded-full border border-gray-200 flex items-center gap-1.5">
                             <span class="text-[11px] uppercase font-bold text-gray-500 tracking-wide">Req ID:</span>
                             <span id="paymentReqId" class="text-xs font-bold text-theme-cmDark font-mono select-all"></span>
@@ -347,16 +185,13 @@
                         </button>
                     </div>
 
-                    <!-- Toggle Button for Other Options -->
                     <div class="mt-6 border-t border-gray-200/60 pt-5">
                         <button onclick="toggleOtherOptions()" id="toggleOptionsBtn" class="w-full flex items-center justify-center gap-2 text-sm font-semibold text-gray-500 hover:text-theme-primary transition">
                             View other payment options <i data-lucide="chevron-down" class="w-4 h-4"></i>
                         </button>
                     </div>
 
-                    <!-- Hidden Payment Options Container -->
                     <div id="otherPaymentOptions" class="hidden space-y-6 mt-5 animate-[fadeIn_0.2s_ease-in-out]">
-                        <!-- UPI Details -->
                         <div>
                             <h4 class="text-[12px] font-semibold text-gray-500 mb-2 uppercase tracking-wide">Direct UPI Details</h4>
                             <div class="bg-white border border-gray-200 rounded-lg divide-y divide-gray-100 shadow-sm">
@@ -377,7 +212,6 @@
                             </div>
                         </div>
 
-                        <!-- Bank Details -->
                         <div>
                             <h4 class="text-[12px] font-semibold text-gray-500 mb-2 uppercase tracking-wide">Manual Bank Transfer</h4>
                             <div class="bg-white border border-gray-200 rounded-lg divide-y divide-gray-100 shadow-sm">
@@ -407,10 +241,14 @@
                     </div>
                 </div>
 
-                <!-- Footer CTA -->
                 <div class="p-6 border-t border-gray-100 bg-white sticky bottom-0 z-10">
-                    <button onclick="sendWhatsApp()" class="w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold py-3.5 px-4 rounded-lg flex items-center justify-center gap-2 transition shadow-sm">
-                        <i data-lucide="check-circle" class="w-4 h-4"></i> I have made the payment
+                    <div class="mb-4">
+                        <label class="block text-[12px] text-gray-500 mb-1.5 font-semibold uppercase">Upload Acknowledgment</label>
+                        <input type="file" id="receiptUpload" accept="image/*,application/pdf" class="w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-theme-primary/10 file:text-theme-primary hover:file:bg-theme-primary/20 transition cursor-pointer">
+                    </div>
+                    
+                    <button id="submitPaymentBtn" onclick="submitToSheet()" class="w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold py-3.5 px-4 rounded-lg flex items-center justify-center gap-2 transition shadow-sm">
+                        <i data-lucide="upload-cloud" class="w-4 h-4"></i> Submit Payment Details
                     </button>
                 </div>
 
@@ -418,16 +256,11 @@
         </div>
     </div>
 
-    <!-- Small animation class definition -->
-    <style>
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-4px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-    </style>
-
     <script>
         lucide.createIcons();
+
+        // ⚠️ LIVE GOOGLE APPS SCRIPT WEB APP URL
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzpWLdak951IK2OX9ebfPQ9gvT-9pmpyc3VEWbi3hvyiUCDSg8R1y5AB9uzNlcVdCYHdg/exec";
 
         // Hide Splash Screen on load
         window.addEventListener('load', () => {
@@ -438,24 +271,16 @@
                     splash.style.display = 'none';
                 }, 500);
             }, 600);
-            
-            // PWA Service Worker Registration
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/app/sw.js', { scope: '/app/' })
-                    .then(reg => console.log('SW registered:', reg))
-                    .catch(err => console.log('SW failed:', err));
-            }
         });
 
         const UPI_ID = "accountree@ybl";
         const PAYEE_NAME = "Accountree";
-        const CONTACT_NUMBER = "919946151111";
 
         let currentAmount = "";
         let currentDesc = "";
         let currentReqId = "";
 
-        // Generate a random unique ID (e.g., REQ-A1B2C3D)
+        // Generate a random unique ID
         function generateUniqueId() {
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
             let result = 'REQ-';
@@ -466,50 +291,33 @@
         }
 
         function generatePayment() {
-            // Fetch values and forcefully convert string inputs to UPPERCASE
             const name = document.getElementById('payerName').value.trim().toUpperCase();
             const mobile = document.getElementById('payerMobile').value.trim();
             const amount = document.getElementById('payAmount').value.trim();
             const desc = document.getElementById('payDesc').value.trim().toUpperCase();
 
             // Validations
-            if(!name) {
-                alert("Please enter your Full Name.");
-                return;
-            }
-            if(!mobile || mobile.length !== 10) {
-                alert("Please enter a valid 10-digit mobile number.");
-                return;
-            }
-            if(!amount || amount <= 0) {
-                alert("Please enter a valid amount.");
-                return;
-            }
+            if(!name) { alert("Please enter your Full Name."); return; }
+            if(!mobile || mobile.length !== 10) { alert("Please enter a valid 10-digit mobile number."); return; }
+            if(!amount || amount <= 0) { alert("Please enter a valid amount."); return; }
 
             currentAmount = amount;
             currentReqId = generateUniqueId();
-            
-            // Base description + Request ID
             currentDesc = desc ? `${desc} (ID: ${currentReqId})` : `CMPAY (ID: ${currentReqId})`;
 
-            // Display values in UI
             document.getElementById('qrAmountDisplay').innerText = `₹${parseFloat(amount).toLocaleString('en-IN', {minimumFractionDigits: 2})}`;
             document.getElementById('paymentReqId').innerText = currentReqId;
 
-            // Reset the hidden options toggle to be closed every time a new payment is generated
             const container = document.getElementById('otherPaymentOptions');
             const btn = document.getElementById('toggleOptionsBtn');
             container.classList.add('hidden');
             btn.innerHTML = `View other payment options <i data-lucide="chevron-down" class="w-4 h-4"></i>`;
 
-            // Generate UPI String
             const transactionNote = `${name} | ${mobile} | ${currentDesc}`;
             const upiString = `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(PAYEE_NAME)}&am=${amount}&cu=INR&tn=${encodeURIComponent(transactionNote)}&tr=${currentReqId}`;
 
-            // Generate QR Code
             const qrContainer = document.getElementById('qrcode');
             qrContainer.innerHTML = "";
-            
             new QRCode(qrContainer, {
                 text: upiString,
                 width: 170,
@@ -520,14 +328,13 @@
             });
 
             document.getElementById('paymentModal').classList.remove('hidden');
-            lucide.createIcons(); // Refresh icons for the newly reset button
+            lucide.createIcons(); 
         }
 
         function closeModal() {
             document.getElementById('paymentModal').classList.add('hidden');
         }
 
-        // Toggle Other Payment Options
         function toggleOtherOptions() {
             const container = document.getElementById('otherPaymentOptions');
             const btn = document.getElementById('toggleOptionsBtn');
@@ -542,16 +349,13 @@
             lucide.createIcons();
         }
 
-        // Generic Copy Function
         function copyDetail(text, iconId) {
             navigator.clipboard.writeText(text).then(() => {
                 const iconElement = document.getElementById(iconId);
-                
                 iconElement.setAttribute('data-lucide', 'check');
                 iconElement.classList.remove('text-gray-400', 'group-hover:text-theme-primary');
                 iconElement.classList.add('text-green-500');
                 lucide.createIcons();
-                
                 setTimeout(() => {
                     iconElement.setAttribute('data-lucide', 'copy');
                     iconElement.classList.remove('text-green-500');
@@ -576,13 +380,59 @@
             }
         }
 
-        function sendWhatsApp() {
-            const name = document.getElementById('payerName').value.trim().toUpperCase() || "CUSTOMER";
+        async function submitToSheet() {
+            const name = document.getElementById('payerName').value.trim().toUpperCase();
             const mobile = document.getElementById('payerMobile').value.trim();
+            const fileInput = document.getElementById('receiptUpload');
+            const btn = document.getElementById('submitPaymentBtn');
             
-            const text = `Hi, I am ${name} (+91 ${mobile}). I have initiated a payment of ₹${currentAmount} for ${currentDesc}. \n\nMy Request ID is: *${currentReqId}*. \n\nHere is my acknowledgment.`;
-            const waUrl = `https://wa.me/${CONTACT_NUMBER}?text=${encodeURIComponent(text)}`;
-            window.open(waUrl, '_blank');
+            if (fileInput.files.length === 0) {
+                alert("Please upload an acknowledgment receipt before submitting.");
+                return;
+            }
+
+            const file = fileInput.files[0];
+            
+            // New strict processing text to prevent closure
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Uploading... Do not close`;
+            btn.disabled = true;
+
+            const reader = new FileReader();
+            reader.onload = async function() {
+                const base64String = reader.result.split(',')[1];
+                
+                const payload = {
+                    name: name || "CUSTOMER",
+                    mobile: mobile,
+                    amount: currentAmount,
+                    description: currentDesc,
+                    reqId: currentReqId,
+                    fileName: file.name,
+                    mimeType: file.type,
+                    fileBase64: base64String
+                };
+
+                try {
+                    const response = await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        body: JSON.stringify(payload),
+                        mode: 'no-cors' 
+                    });
+                    
+                    alert("Payment details and receipt uploaded successfully!");
+                    closeModal(); 
+                    
+                } catch (error) {
+                    alert("Error submitting data. Please try again.");
+                    console.error("Upload error:", error);
+                } finally {
+                    btn.innerHTML = `<i data-lucide="upload-cloud" class="w-4 h-4"></i> Submit Payment Details`;
+                    btn.disabled = false;
+                    lucide.createIcons();
+                }
+            };
+            
+            reader.readAsDataURL(file);
         }
     </script>
 </body>
