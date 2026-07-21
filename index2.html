@@ -2,6 +2,175 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Payments</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f4f5f9; }
+    </style>
+</head>
+<body class="text-gray-800 relative">
+
+    <div id="loginOverlay" class="fixed inset-0 bg-gray-900/90 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white p-8 rounded-xl shadow-2xl max-w-sm w-full text-center">
+            <h2 class="text-2xl font-bold text-gray-900 mb-2"><span class="text-[#C80000]">CM</span>Filings Admin</h2>
+            <p class="text-sm text-gray-500 mb-6">Enter admin passcode to view data</p>
+            
+            <input type="password" id="adminPasscode" placeholder="Enter Passcode" class="w-full border border-gray-300 rounded-lg px-4 py-3 mb-4 outline-none focus:border-[#0057FF] focus:ring-1 focus:ring-[#0057FF] transition">
+            
+            <button onclick="loginAndFetch()" class="w-full bg-[#0057FF] hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition shadow-md">
+                Access Dashboard
+            </button>
+            <p id="loginError" class="text-red-500 text-xs font-semibold mt-3 hidden">Incorrect passcode.</p>
+        </div>
+    </div>
+
+    <header class="bg-white border-b border-gray-200 px-8 py-4 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+            <span class="font-bold text-xl tracking-tight text-gray-900">
+                <span class="text-[#C80000]">CM</span>Filings Admin
+            </span>
+        </div>
+        <button onclick="logout()" class="text-sm font-semibold text-gray-500 hover:text-red-600 bg-gray-100 hover:bg-red-50 px-3 py-1.5 rounded-full flex items-center gap-2 transition">
+            <i data-lucide="log-out" class="w-4 h-4"></i> Lock Dashboard
+        </button>
+    </header>
+
+    <main class="p-8 max-w-7xl mx-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-900">Payment Confirmations</h1>
+            <button onclick="fetchData()" class="bg-[#0057FF] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 flex gap-2 items-center transition shadow-sm">
+                <i data-lucide="refresh-cw" class="w-4 h-4" id="refreshIcon"></i> Refresh Data
+            </button>
+        </div>
+
+        <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-50 border-b border-gray-200 text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                            <th class="p-4">Timestamp</th>
+                            <th class="p-4">Client Name</th>
+                            <th class="p-4">Mobile</th>
+                            <th class="p-4">Amount (₹)</th>
+                            <th class="p-4">Req ID</th>
+                            <th class="p-4">Status</th>
+                            <th class="p-4 text-center">Receipt</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTable" class="divide-y divide-gray-100 text-sm">
+                        <tr>
+                            <td colspan="7" class="p-8 text-center text-gray-400">Please log in to load data.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+        
+        // ⚠️ YOUR EXACT APPS SCRIPT URL
+        const BASE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzpWLdak951IK2OX9ebfPQ9gvT-9pmpyc3VEWbi3hvyiUCDSg8R1y5AB9uzNlcVdCYHdg/exec";
+        
+        let currentPasscode = "";
+
+        // Trigger login on Enter key
+        document.getElementById("adminPasscode").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") { loginAndFetch(); }
+        });
+
+        async function loginAndFetch() {
+            const inputPasscode = document.getElementById('adminPasscode').value;
+            if(!inputPasscode) return;
+            
+            currentPasscode = inputPasscode;
+            document.getElementById('loginError').classList.add('hidden');
+            await fetchData();
+        }
+
+        function logout() {
+            currentPasscode = "";
+            document.getElementById('adminPasscode').value = "";
+            document.getElementById('dataTable').innerHTML = '<tr><td colspan="7" class="p-8 text-center text-gray-400">Please log in to load data.</td></tr>';
+            document.getElementById('loginOverlay').classList.remove('hidden');
+        }
+
+        async function fetchData() {
+            if(!currentPasscode) return;
+
+            const tableBody = document.getElementById('dataTable');
+            const icon = document.getElementById('refreshIcon');
+            
+            icon.classList.add('animate-spin');
+            tableBody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-gray-500">Verifying and loading data...</td></tr>';
+            
+            try {
+                // Append the passcode to the URL securely via query parameter
+                const fetchUrl = `${BASE_SCRIPT_URL}?passcode=${encodeURIComponent(currentPasscode)}`;
+                const response = await fetch(fetchUrl);
+                const data = await response.json();
+                
+                // Check if the Apps Script rejected the passcode
+                if (data.status === "error") {
+                    document.getElementById('loginError').classList.remove('hidden');
+                    tableBody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-gray-400">Please log in to load data.</td></tr>';
+                    return;
+                }
+
+                // If successful, hide the overlay and show data
+                document.getElementById('loginOverlay').classList.add('hidden');
+                tableBody.innerHTML = ''; 
+                
+                if (data.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-gray-500">No payment records found.</td></tr>';
+                    return;
+                }
+
+                data.reverse().forEach(row => {
+                    const statusColor = row[5] === 'Pending' ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700';
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-gray-50 transition";
+                    tr.innerHTML = `
+                        <td class="p-4 font-medium text-gray-600">${row[0]}</td>
+                        <td class="p-4 font-bold text-gray-900 uppercase">${row[1]}</td>
+                        <td class="p-4 text-gray-600">${row[2]}</td>
+                        <td class="p-4 font-bold text-[#0057FF]">₹${row[3]}</td>
+                        <td class="p-4 font-mono text-xs text-gray-500">${row[6] || 'N/A'}</td>
+                        <td class="p-4">
+                            <span class="px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${statusColor}">${row[5]}</span>
+                        </td>
+                        <td class="p-4 text-center">
+                            ${row[7] !== 'No Receipt Uploaded' 
+                                ? `<a href="${row[7]}" target="_blank" class="inline-flex p-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg transition"><i data-lucide="external-link" class="w-4 h-4"></i></a>` 
+                                : `<span class="text-xs text-gray-400">None</span>`}
+                        </td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                tableBody.innerHTML = '<tr><td colspan="7" class="p-8 text-center text-red-500">Failed to load data.</td></tr>';
+            } finally {
+                icon.classList.remove('animate-spin');
+                lucide.createIcons();
+            }
+        }
+    </script>
+</body>
+</html>
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Payment | CMFilings</title>
     
