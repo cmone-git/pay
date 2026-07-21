@@ -16,16 +16,16 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="CMPay">
 
-<meta property="og:type" content="website">
-<meta property="og:title" content="Payment | CM Filings">
-<meta property="og:description" content="Pay securely online for CM Filings services.">
-<meta property="og:url" content="https://pay.cmfilings.com/">
-<meta property="og:image" content="https://pay.cmfilings.com/assets/share-image.png">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Payment | CM Filings">
+    <meta property="og:description" content="Pay securely online for CM Filings services.">
+    <meta property="og:url" content="https://pay.cmfilings.com/">
+    <meta property="og:image" content="https://pay.cmfilings.com/assets/share-image.png">
 
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Payment | CM Filings">
-<meta name="twitter:description" content="Pay securely online for CM Filings services.">
-<meta name="twitter:image" content="https://pay.cmfilings.com/assets/share-image.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Payment | CM Filings">
+    <meta name="twitter:description" content="Pay securely online for CM Filings services.">
+    <meta name="twitter:image" content="https://pay.cmfilings.com/assets/share-image.png">
 
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -268,6 +268,37 @@
         </div>
     </div>
 
+    <!-- Glassmorphism Success Popup Overlay -->
+    <div id="successPopupOverlay" class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-gray-900/40 backdrop-blur-md transition-opacity duration-300 opacity-0">
+        
+        <!-- Popup Card -->
+        <div id="successPopupCard" class="bg-white/90 backdrop-blur-xl border border-white/50 p-8 rounded-2xl shadow-2xl max-w-sm w-full mx-4 text-center transform scale-95 transition-all duration-300">
+            
+            <!-- Green Tick Icon -->
+            <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-6 shadow-inner">
+                <i data-lucide="check-circle-2" class="h-10 w-10 text-green-500"></i>
+            </div>
+            
+            <!-- Success Message -->
+            <h3 class="text-xl font-bold text-gray-900 mb-2">
+                Payment Akn Uploaded Successfully
+            </h3>
+            
+            <!-- Reference Number -->
+            <div class="bg-gray-100/80 rounded-lg p-3 mb-6 mt-4 border border-gray-200">
+                <p class="text-sm text-gray-500 font-medium mb-1">Request Ref No.</p>
+                <p id="popupRefNo" class="text-lg font-mono font-bold text-gray-800 tracking-wider">
+                    <!-- Ref No will be injected here -->
+                </p>
+            </div>
+            
+            <!-- Close Button -->
+            <button onclick="closeSuccessPopup()" class="w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold py-3 px-4 rounded-xl transition shadow-md">
+                Done
+            </button>
+        </div>
+    </div>
+
     <script>
         lucide.createIcons();
 
@@ -392,6 +423,42 @@
             }
         }
 
+        function showSuccessPopup(refNumber) {
+            const overlay = document.getElementById('successPopupOverlay');
+            const card = document.getElementById('successPopupCard');
+            const refElement = document.getElementById('popupRefNo');
+            
+            refElement.textContent = refNumber || "N/A";
+            
+            overlay.classList.remove('hidden');
+            
+            setTimeout(() => {
+                overlay.classList.remove('opacity-0');
+                overlay.classList.add('opacity-100');
+                
+                card.classList.remove('scale-95');
+                card.classList.add('scale-100');
+                
+                lucide.createIcons();
+            }, 10);
+        }
+
+        function closeSuccessPopup() {
+            const overlay = document.getElementById('successPopupOverlay');
+            const card = document.getElementById('successPopupCard');
+            
+            overlay.classList.remove('opacity-100');
+            overlay.classList.add('opacity-0');
+            
+            card.classList.remove('scale-100');
+            card.classList.add('scale-95');
+            
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+                window.location.reload(); // Reload the page to reset the form state
+            }, 300);
+        }
+
         async function submitToSheet() {
             const name = document.getElementById('payerName').value.trim().toUpperCase();
             const mobile = document.getElementById('payerMobile').value.trim();
@@ -431,8 +498,8 @@
                         mode: 'no-cors' 
                     });
                     
-                    alert("Payment details and receipt uploaded successfully!");
-                    closeModal(); 
+                    closeModal();
+                    showSuccessPopup(currentReqId);
                     
                 } catch (error) {
                     alert("Error submitting data. Please try again.");
